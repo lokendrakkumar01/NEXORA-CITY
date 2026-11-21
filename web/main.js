@@ -305,6 +305,59 @@ RectAreaLightUniformsLib.init();
 
   // BUILD THE FIRST MILESTONE RESIDENTIAL HOUSE
   buildResidentialVilla(60, 48);
+  // SECOND VILLA
+  buildResidentialVilla(60, 95);
+
+  // POLICE STATION BUILDING
+  function buildPoliceStation(x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    const wallMat = mat(0xccd4d9, 0.78, 0.06);
+    const blueTrim = mat(0x1a3660, 0.6, 0.15);
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x8ab8d4, roughness: 0.12, metalness: 0.3, clearcoat: 1 });
+    // Main building body
+    addBox(g, wallMat, 0, 4, 0, 24, 8, 16);
+    addBox(g, blueTrim, 0, 0.3, 0, 25, 0.6, 17);
+    addBox(g, blueTrim, 0, 8.3, 0, 25, 0.6, 17);
+    // Blue stripe
+    addBox(g, blueTrim, 0, 4.0, 8.08, 24, 1.8, 0.1, false);
+    // Windows
+    for (let i = -3; i <= 3; i++) {
+      addBox(g, glassMat, i * 3.2, 4.5, 8.1, 2.0, 2.4, 0.08, false);
+      addBox(g, glassMat, i * 3.2, 4.5, -8.1, 2.0, 2.4, 0.08, false);
+    }
+    // "POLICE" sign
+    const signTex = makeTexture((c, w, h) => {
+      c.fillStyle = '#0d1e36'; c.fillRect(0, 0, w, h);
+      c.strokeStyle = '#4a8ef0'; c.lineWidth = 5; c.strokeRect(5, 5, w-10, h-10);
+      c.fillStyle = '#ffffff'; c.shadowColor = '#4a8ef0'; c.shadowBlur = 24;
+      c.font = '800 72px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('POLICE', w/2, h*0.45);
+      c.font = '500 20px monospace'; c.fillText('AFTERLIGHT PD  ·  DISTRICT 4', w/2, h*0.78);
+    });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.6), new THREE.MeshBasicMaterial({ map: signTex, transparent: false, side: THREE.DoubleSide, toneMapped: false }));
+    sign.position.set(0, 7, 8.2); g.add(sign);
+    // Entrance steps
+    for (let s = 0; s < 4; s++) addBox(g, mat(0xb5bdc4, 0.9), 0, s*0.22+0.1, 9.2+s*0.35, 7, 0.22, 0.6, false);
+    // Door
+    addBox(g, mat(0x101828, 0.3, 0.3), 0, 1.9, 8.1, 2.4, 3.2, 0.1, false);
+    // Parking lot - police cars parked
+    const parked = makeCar(0x1d3046, true); parked.root.position.set(-6, 0, z < 0 ? -13 : 13); parked.root.rotation.y = Math.PI/2; scene.add(parked.root);
+    const parkedSiren = mat(0x4d9dff, 0.25, 0.1, { emissive: 0x1764ed, emissiveIntensity: 2 });
+    addBox(parked.root, mat(0x1a2a40, 0.5), 0, 1.94, 0.05, 0.94, 0.12, 0.33, false);
+    addBox(parked.root, parkedSiren, 0, 2.08, 0.05, 0.4, 0.18, 0.3, false);
+    // Blue lights
+    const blueLight = new THREE.PointLight(0x4488ff, 8, 14); blueLight.position.set(x, 5, z); scene.add(blueLight);
+    buildings.push({ x, z, w: 24, d: 16, h: 8.6, group: g });
+  }
+  buildPoliceStation(185, -55);
+
+  // VEHICLE GARAGE MARKER
+  const garageMarker = new THREE.Group(); garageMarker.position.set(140, 0, 68); scene.add(garageMarker);
+  const garageMat = new THREE.MeshStandardMaterial({ color: 0x0066ff, emissive: 0x0033ff, emissiveIntensity: 2.5 });
+  const garageRing = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.08, 8, 48), garageMat); garageRing.rotation.x = Math.PI / 2; garageRing.position.y = 0.18; garageMarker.add(garageRing);
+  const garageBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.65, 10, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x2255ff, transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false })); garageBeam.position.y = 5; garageMarker.add(garageBeam);
+  const garageLight = new THREE.PointLight(0x0066ff, 12, 16); garageLight.position.y = 4; garageMarker.add(garageLight);
+  const garageLabelTex = makeTexture((c, w, h) => { c.fillStyle = '#001033'; c.fillRect(0, 0, w, h); c.fillStyle = '#4499ff'; c.font = '800 56px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.shadowColor = '#4499ff'; c.shadowBlur = 20; c.fillText('GARAGE', w/2, h*0.45); c.font = '400 20px monospace'; c.fillText('PRESS E TO BROWSE VEHICLES', w/2, h*0.78); }, 400, 128);
+  const garageSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: garageLabelTex, transparent: true, depthWrite: false })); garageSprite.position.y = 11; garageSprite.scale.set(5, 1.6, 1); garageMarker.add(garageSprite);
 
   // ELEVATED SKYBRIDGE CONNECTING SKYSCRAPERS ACROSS STREET
   const skybridge = new THREE.Group(); skybridge.position.set(120, 18, 23); scene.add(skybridge);
@@ -455,7 +508,71 @@ RectAreaLightUniformsLib.init();
     return { root, wheels, tailMat: myTailMat, type: 'bike', speed: 0 };
   }
 
+  
   const bikeModel = makeMotorcycle(); scene.add(bikeModel.root); bikeModel.root.position.set(78, 0, 48);
+
+  // VEHICLE 3: TITAN-X SUV
+  function makeSUV(color = 0x2d3f52) {
+    const root = new THREE.Group();
+    const paint = new THREE.MeshPhysicalMaterial({ color, roughness: 0.14, metalness: 0.68, clearcoat: 0.9, clearcoatRoughness: 0.1 });
+    addBox(root, paint, 0, 0.9, 0, 2.5, 0.65, 5.2);
+    addBox(root, paint, 0, 1.3, -0.5, 2.38, 0.55, 3.8);
+    addBox(root, shared.glass, 0, 1.75, 0.3, 2.1, 0.75, 2.3);
+    addBox(root, paint, 0, 2.2, 0.3, 1.95, 0.14, 2.1);
+    addBox(root, mat(0x1a2228, 0.4, 0.5), 0, 1.0, 1.4, 2.3, 0.52, 1.5);
+    addBox(root, mat(0x272e33, 0.5, 0.6), 0, 0.42, -2.56, 2.1, 0.26, 0.2, false);
+    const myTailMat = tailMat.clone();
+    const myHeadMat = headMat.clone();
+    const suvTireGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.36, 18); suvTireGeo.rotateZ(Math.PI / 2);
+    const suvRimGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.38, 12); suvRimGeo.rotateZ(Math.PI / 2);
+    const wheelPivots = [];
+    for (const x of [-1.28, 1.28]) for (const z of [-1.65, 1.7]) {
+      const pivot = new THREE.Group(); pivot.position.set(x, 0.5, z); root.add(pivot); wheelPivots.push(pivot);
+      addMesh(pivot, suvTireGeo, shared.rubber, 0, 0, 0); addMesh(pivot, suvRimGeo, mat(0x9faeb1, 0.25, 0.86), 0, 0, 0);
+    }
+    for (const side of [-1, 1]) {
+      addBox(root, myHeadMat, side * 0.82, 1.0, -2.6, 0.5, 0.18, 0.08, false);
+      addBox(root, myTailMat, side * 0.82, 1.0, 2.6, 0.45, 0.18, 0.07, false);
+    }
+    const suvSpot = new THREE.SpotLight(0xf0f8ff, 14, 50, Math.PI / 6, 0.4, 1.5);
+    suvSpot.position.set(0, 1.0, -2.6); suvSpot.target.position.set(0, 0, -22);
+    root.add(suvSpot); root.add(suvSpot.target);
+    return { root, wheelPivots, tailMat: myTailMat, type: 'suv', speed: 0 };
+  }
+  const suvModel = makeSUV(0x2d3f52); scene.add(suvModel.root); suvModel.root.position.set(135, 0, 68);
+
+  // VEHICLE 4: HAULER TRUCK
+  function makeTruck(color = 0x4a3225) {
+    const root = new THREE.Group();
+    const paint = new THREE.MeshPhysicalMaterial({ color, roughness: 0.28, metalness: 0.55, clearcoat: 0.5 });
+    const chromeMat = mat(0xb0b8bc, 0.22, 0.95);
+    // Cab
+    addBox(root, paint, 0, 1.3, -2.2, 2.6, 2.0, 2.8);
+    addBox(root, shared.glass, 0, 2.1, -3.4, 2.4, 0.9, 0.18, false);
+    addBox(root, mat(0x0d1318, 0.5, 0.4), 0, 1.0, -3.6, 2.5, 0.6, 0.18, false);
+    // Cargo bed
+    addBox(root, paint, 0, 0.8, 1.6, 2.6, 0.5, 5.6);
+    addBox(root, mat(0x3a2e28, 0.9), 0, 1.4, 1.6, 2.5, 1.0, 5.4, true);
+    addBox(root, paint, -1.26, 1.0, 1.6, 0.14, 1.1, 5.2);
+    addBox(root, paint, 1.26, 1.0, 1.6, 0.14, 1.1, 5.2);
+    addBox(root, paint, 0, 1.0, 4.4, 2.6, 1.1, 0.16);
+    // Exhaust stacks
+    addMesh(root, new THREE.CylinderGeometry(0.09, 0.09, 2.5, 8), chromeMat, 1.1, 2.4, -1.0, 1, 1, 1, false, false);
+    // Wheels (6-wheel config: front pair + 2 rear pairs)
+    const truckTireGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.38, 18); truckTireGeo.rotateZ(Math.PI / 2);
+    const truckRimGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.4, 12); truckRimGeo.rotateZ(Math.PI / 2);
+    const wheelPivots = [];
+    const wheelPositions = [[-1.35,-2.2],[-1.35,1.1],[-1.35,2.6],[1.35,-2.2],[1.35,1.1],[1.35,2.6]];
+    for (const [x, z] of wheelPositions) {
+      const pivot = new THREE.Group(); pivot.position.set(x, 0.55, z); root.add(pivot); wheelPivots.push(pivot);
+      addMesh(pivot, truckTireGeo, shared.rubber, 0, 0, 0); addMesh(pivot, truckRimGeo, mat(0x888e92, 0.3, 0.8), 0, 0, 0);
+    }
+    const myTailMat = tailMat.clone();
+    addBox(root, headMat, 0, 1.3, -3.62, 2.2, 0.28, 0.08, false);
+    addBox(root, myTailMat, 0, 1.0, 4.44, 2.3, 0.22, 0.07, false);
+    return { root, wheelPivots, tailMat: myTailMat, type: 'truck', speed: 0 };
+  }
+  const truckModel = makeTruck(0x4a3225); scene.add(truckModel.root); truckModel.root.position.set(165, 0, -38);
 
   // 5 COMPLETE WEAPON CLASSES (WITH ACCURATE STATS & 3D MODELS)
   const WEAPONS = [
@@ -678,11 +795,48 @@ RectAreaLightUniformsLib.init();
     scene.add(enemy.root); rivals.push(enemy);
   });
 
+  // NPC DIALOGUE PHRASES
+  const npcPhrases = [
+    "Keep moving, courier!", "You seen the Nox crew?", "Afterlight never sleeps.",
+    "My augments itch in the rain...", "Watch your six out there.", "NEXORA owns this block.",
+    "The data market is open.", "Street laws only here.", "You hear those sirens?",
+    "New face in the district.", "Stay sharp, the grid is watching.", "Rain wipes the blood clean."
+  ];
+  const npcDialogues = new Map(); // ped -> { div, timer }
+
   const traffic = [];
   for (let i = 0; i < 6; i++) {
     const colors = [0x287f80, 0x4d5ca3, 0xad7642, 0x943d4d, 0x80908d, 0x504476];
     const model = makeCar(colors[i], true); model.root.position.set(i % 2 ? 125 : 115, 0, -145 + i * 49); model.root.rotation.y = i % 2 ? 0 : Math.PI; scene.add(model.root);
     traffic.push({ ...model, lane: i % 2 ? 125 : 115, speed: i % 2 ? -4.6 - (i % 3) : 4.7 + (i % 3), direction: i % 2 ? 1 : -1, hitCooldown: 0 });
+  }
+
+  // WEAPON PICKUP SPAWNS
+  const weaponPickups = [];
+  const pickupDefs = [
+    { wepIndex: 3, ammoGrant: 16, x: 103, z: -20 },   // Shotgun near market
+    { wepIndex: 2, ammoGrant: 30, x: 136, z: 25 },     // Assault rifle
+    { wepIndex: 4, ammoGrant: 10, x: 92, z: 55 },      // Sniper near villa
+    { wepIndex: 1, ammoGrant: 64, x: 148, z: -55 },    // SMG
+  ];
+  pickupDefs.forEach((def) => {
+    const g = new THREE.Group(); g.position.set(def.x, 0.42, def.z); scene.add(g);
+    const glowMat = new THREE.MeshStandardMaterial({ color: WEAPONS[def.wepIndex].color, emissive: WEAPONS[def.wepIndex].color, emissiveIntensity: 2.5, roughness: 0.3 });
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.06, 20), new THREE.MeshStandardMaterial({ color: 0x0a1520, emissive: 0x1a3045, emissiveIntensity: 1.5 }));
+    base.rotation.x = 0; g.add(base);
+    const icon = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.22), glowMat); icon.position.y = 0.25; g.add(icon);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), glowMat); barrel.rotation.z = Math.PI / 2; barrel.position.y = 0.25; g.add(barrel);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.035, 8, 32), glowMat); ring.rotation.x = Math.PI / 2; g.add(ring);
+    const light = new THREE.PointLight(WEAPONS[def.wepIndex].color, 6, 5); light.position.y = 0.5; g.add(light);
+    weaponPickups.push({ ...def, group: g, ring, light, collected: false });
+  });
+
+  // Cross-street traffic (along X axis)
+  const crossTraffic = [];
+  for (let i = 0; i < 3; i++) {
+    const colors = [0x2d6e54, 0x5c3d7a, 0xa83c2e];
+    const ct = makeCar(colors[i], true); ct.root.position.set(55 + i * 48, 0, -3); ct.root.rotation.y = i % 2 ? Math.PI / 2 : -Math.PI / 2; scene.add(ct.root);
+    crossTraffic.push({ ...ct, speed: i % 2 ? 4.2 + i * 0.4 : -(4.5 + i * 0.3), lane: -3, hitCooldown: 0 });
   }
 
   const policeCar = makeCar(0x1d3046, true); policeCar.speed = 0; policeCar.root.position.set(120, 0, -155); policeCar.root.visible = false; scene.add(policeCar.root);
@@ -721,6 +875,10 @@ RectAreaLightUniformsLib.init();
     yaw: 0, cameraPitch: 0.29, isAiming: false, mouseDown: false, isFiring: false, lastMouseX: 0, lastMouseY: 0,
     hitInvuln: 0, currentWeaponIndex: 0, reload: 0, fireCooldown: 0, wanted: 0, wantedDecay: 0,
     robberyStarted: false, robberyProgress: 0, robberyComplete: false, policeActive: false, policeDelay: 0,
+    money: 2400, ownedVilla: false, nearGarage: false, inGarage: false,
+    weaponWheelOpen: false, weaponWheelHovered: 0,
+    nearInterior: false, insideMarket: false,
+    npcDialogTimer: 0, pickupFlash: 0,
     kills: 0, escapeComplete: false, nextThunder: 15 + Math.random() * 20, thunderFlash: 0
   };
 
@@ -916,13 +1074,31 @@ RectAreaLightUniformsLib.init();
       resolveBuildingCollision(player.root.position, 0.7);
       showToast('ON FOOT  ·  NEXUS BIKE PARKED');
     } else if (state.nearCar) {
+      const nearSUV3 = player.root.position.distanceTo(suvModel.root.position) < 8;
+      const nearTruck3 = player.root.position.distanceTo(truckModel.root.position) < 8;
       state.inCar = true; player.root.visible = false; ui.vehicleHud.classList.add('show');
-      ui.vehicleName.innerHTML = 'VELA <b>GT</b><small>HYBRID COUPE</small>'; showToast('VELA GT  ·  READY TO DRIVE');
+      if (nearSUV3 && player.root.position.distanceTo(carModel.root.position) > 8) {
+        ui.vehicleName.innerHTML = 'TITAN <b>X</b><small>TACTICAL SUV</small>'; showToast('TITAN-X  ·  READY TO DRIVE');
+      } else if (nearTruck3 && player.root.position.distanceTo(carModel.root.position) > 8) {
+        ui.vehicleName.innerHTML = 'HAULER <b>PRO</b><small>CARGO TRUCK</small>'; showToast('HAULER  ·  READY TO DRIVE');
+      } else {
+        ui.vehicleName.innerHTML = 'VELA <b>GT</b><small>HYBRID COUPE</small>'; showToast('VELA GT  ·  READY TO DRIVE');
+      }
     } else if (state.nearBike) {
       state.inBike = true; player.root.visible = false; ui.vehicleHud.classList.add('show');
       ui.vehicleName.innerHTML = 'NEXUS <b>900</b><small>STREETFIGHTER SUPERBIKE</small>'; showToast('NEXUS 900  ·  THROTTLE READY');
+    } else if (state.nearGarage) {
+      openGarageUI();
     } else if (state.nearVilla) {
-      showToast('RESIDENTIAL VILLA  ·  AFTERLIGHT SUBURB');
+      if (state.ownedVilla) {
+        showToast('YOUR VILLA  ·  AFTERLIGHT SUBURB  ·  SAFE HOUSE ACTIVE');
+      } else if (state.money >= 15000) {
+        state.money -= 15000; state.ownedVilla = true;
+        showToast('VILLA PURCHASED  ·  SAFE HOUSE UNLOCKED  ·  ¢ ' + state.money.toLocaleString());
+        try { localStorage.setItem('nexora_villa', '1'); localStorage.setItem('nexora_money', String(state.money)); } catch {}
+      } else {
+        showToast('INSUFFICIENT FUNDS  ·  NEED ¢ 15,000  ·  YOU HAVE ¢ ' + state.money.toLocaleString());
+      }
     } else if (state.nearShop && !state.robberyStarted) {
       state.robberyStarted = true; state.wanted = 3; state.policeDelay = 6; state.robberyProgress = 0;
       ui.objective.textContent = 'Take the data key — hold the shop';
@@ -1050,19 +1226,51 @@ RectAreaLightUniformsLib.init();
 
     const actor = state.inCar ? carModel.root : state.inBike ? bikeModel.root : player.root;
     state.nearCar = !state.inCar && !state.inBike && player.root.position.distanceTo(carModel.root.position) < 8;
+    const nearSuv = !state.inCar && !state.inBike && player.root.position.distanceTo(suvModel.root.position) < 8;
+    const nearTruck = !state.inCar && !state.inBike && player.root.position.distanceTo(truckModel.root.position) < 8;
+    if (!state.nearCar && nearSuv) state.nearCar = true;
+    if (!state.nearCar && nearTruck) state.nearCar = true;
     state.nearBike = !state.inCar && !state.inBike && player.root.position.distanceTo(bikeModel.root.position) < 6;
     state.nearShop = !state.inCar && !state.inBike && !state.robberyStarted && player.root.position.distanceTo(targetPosition) < 5.8;
     state.nearVilla = !state.inCar && !state.inBike && player.root.position.distanceTo(new THREE.Vector3(62.5, 0, 56.4)) < 4.2;
 
-    const showPrompt = state.nearCar || state.nearBike || state.inCar || state.inBike || state.nearShop || state.nearVilla;
+    const showPrompt = state.nearCar || state.nearBike || state.inCar || state.inBike || state.nearShop || state.nearVilla || state.nearGarage;
     ui.interaction.classList.toggle('show', showPrompt);
-    ui.interactionLabel.textContent = state.inCar ? 'EXIT VELA GT' : state.inBike ? 'EXIT NEXUS BIKE' :
-                                      state.nearCar ? 'DRIVE VELA GT' : state.nearBike ? 'RIDE NEXUS BIKE' :
-                                      state.nearVilla ? 'INSPECT VILLA RESIDENCE' : 'START THE STORE HEIST';
+    const nearSUV2 = !state.inCar && !state.inBike && player.root.position.distanceTo(suvModel.root.position) < 8;
+    const nearTruck2 = !state.inCar && !state.inBike && player.root.position.distanceTo(truckModel.root.position) < 8;
+    ui.interactionLabel.textContent = state.inCar ? 'EXIT VEHICLE' : state.inBike ? 'EXIT NEXUS BIKE' :
+                                      state.nearCar && player.root.position.distanceTo(carModel.root.position) < 8 ? 'DRIVE VELA GT' :
+                                      nearSUV2 ? 'DRIVE TITAN-X SUV' :
+                                      nearTruck2 ? 'DRIVE HAULER TRUCK' :
+                                      state.nearBike ? 'RIDE NEXUS BIKE' :
+                                      state.nearGarage ? 'OPEN GARAGE  [E]' :
+                                      state.nearVilla ? (state.ownedVilla ? 'YOUR PROPERTY  ·  VILLA' : `BUY VILLA  ·  ¢ 15,000`) :
+                                      'START THE STORE HEIST';
 
+    // NPC Dialogue update
+    for (const [ped, dlg] of npcDialogues) {
+      dlg.timer -= dt;
+      if (dlg.timer <= 0) {
+        dlg.div.remove(); npcDialogues.delete(ped);
+      } else {
+        const screenPos = ped.root.position.clone().add(new THREE.Vector3(0, 2.8, 0));
+        screenPos.project(camera);
+        const sx = (screenPos.x * 0.5 + 0.5) * innerWidth;
+        const sy = (-screenPos.y * 0.5 + 0.5) * innerHeight;
+        dlg.div.style.left = sx + 'px'; dlg.div.style.top = sy + 'px';
+        dlg.div.style.opacity = Math.min(1, dlg.timer * 2);
+      }
+    }
     // Pedestrians
     for (const ped of peds) {
       const toPlayer = ped.root.position.distanceTo(player.root.position);
+      if (!state.inCar && !state.inBike && toPlayer < 3.5 && !npcDialogues.has(ped) && Math.random() < 0.004) {
+        const phrase = npcPhrases[Math.floor(Math.random() * npcPhrases.length)];
+        const div = document.createElement('div');
+        div.className = 'npc-bubble'; div.textContent = phrase;
+        document.getElementById('shell').appendChild(div);
+        npcDialogues.set(ped, { div, timer: 3.5 });
+      }
       if (!state.inCar && !state.inBike && toPlayer < 3.2) {
         const away = ped.root.position.clone().sub(player.root.position); away.y = 0; away.normalize(); ped.direction.lerp(away, Math.min(1, dt * 2.5)).normalize();
       } else if (Math.random() < 0.003) {
@@ -1079,6 +1287,27 @@ RectAreaLightUniformsLib.init();
       ped.arms.forEach((arm, i) => { arm.rotation.x = Math.sin(ped.walkPhase + i * Math.PI + Math.PI) * 0.14; });
       if (ped.direction.lengthSq() > 0.01) ped.root.rotation.y = THREE.MathUtils.damp(ped.root.rotation.y, Math.atan2(ped.direction.x, -ped.direction.z), 3, dt);
     }
+
+    // Weapon pickup animations + collection
+    for (const pu of weaponPickups) {
+      if (pu.collected) continue;
+      pu.group.rotation.y += dt * 1.6;
+      pu.group.position.y = 0.42 + Math.sin(state.time * 2.2 + pu.x) * 0.12;
+      pu.ring.material.emissiveIntensity = 1.8 + Math.sin(state.time * 4) * 1.0;
+      pu.light.intensity = 5 + Math.sin(state.time * 5 + pu.z) * 2;
+      const dist = player.root.position.distanceTo(pu.group.position);
+      if (!state.inCar && !state.inBike && dist < 2.2) {
+        pu.collected = true; pu.group.visible = false;
+        const wep = WEAPONS[pu.wepIndex];
+        wep.reserve = Math.min(wep.reserve + pu.ammoGrant, wep.magSize * 8);
+        if (state.currentWeaponIndex === pu.wepIndex && ui.reserve) ui.reserve.textContent = String(wep.reserve);
+        showToast('PICKUP  ·  ' + wep.name + '  +' + pu.ammoGrant + ' AMMO');
+      }
+    }
+    // Garage marker pulse
+    garageRing.scale.setScalar(1 + Math.sin(state.time * 2.8) * 0.07);
+    garageMarker.rotation.y += dt * 0.6;
+    state.nearGarage = !state.inCar && !state.inBike && player.root.position.distanceTo(garageMarker.position) < 5.5;
 
     // Traffic
     for (const t of traffic) {
@@ -1276,6 +1505,17 @@ RectAreaLightUniformsLib.init();
       g.fillStyle = b.isVilla ? '#556a73' : '#3b4b51';
       g.fillRect((b.x - b.w / 2) * scaleX, (b.z + WORLD.d / 2 - b.d / 2) * scaleZ, b.w * scaleX, b.d * scaleZ);
     }
+    // Garage on minimap
+    g.fillStyle = '#3366ff'; g.shadowColor = '#3366ff'; g.shadowBlur = 7;
+    g.beginPath(); g.arc(140 * scaleX, (68 + WORLD.d / 2) * scaleZ, 3, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+    // Weapon pickups on minimap
+    for (const pu of weaponPickups) if (!pu.collected) {
+      g.fillStyle = '#ffcc00'; g.beginPath(); g.arc(pu.x * scaleX, (pu.z + WORLD.d / 2) * scaleZ, 2, 0, Math.PI * 2); g.fill();
+    }
+    if (state.ownedVilla) {
+      g.fillStyle = '#44ff88'; g.shadowColor = '#44ff88'; g.shadowBlur = 5;
+      g.beginPath(); g.arc(60 * scaleX, (48 + WORLD.d / 2) * scaleZ, 3, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+    }
     g.fillStyle = '#ffb565'; g.shadowColor = '#ffb565'; g.shadowBlur = 9;
     g.beginPath(); g.arc(targetPosition.x * scaleX, (targetPosition.z + WORLD.d / 2) * scaleZ, 3.3, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
     for (const rival of rivals) if (rival.active) { g.fillStyle = '#ff6871'; g.beginPath(); g.arc(rival.root.position.x * scaleX, (rival.root.position.z + WORLD.d / 2) * scaleZ, 2.4, 0, Math.PI * 2); g.fill(); }
@@ -1286,6 +1526,58 @@ RectAreaLightUniformsLib.init();
   }
 
   // ANIMATION & TICK
+  // GARAGE UI
+  function openGarageUI() {
+    const existing = document.getElementById('garageModal');
+    if (existing) { existing.remove(); return; }
+    const modal = document.createElement('div'); modal.id = 'garageModal'; modal.className = 'garage-modal';
+    modal.innerHTML = `
+      <div class="garage-inner">
+        <div class="garage-title">◈  VEHICLE GARAGE</div>
+        <div class="garage-grid">
+          <div class="garage-card" data-v="car">
+            <div class="g-name">VELA GT</div><div class="g-type">HYBRID COUPE</div>
+            <div class="g-stat">TOP: 220 KM/H</div><div class="g-btn">SPAWN</div>
+          </div>
+          <div class="garage-card" data-v="bike">
+            <div class="g-name">NEXUS 900</div><div class="g-type">STREETFIGHTER</div>
+            <div class="g-stat">TOP: 260 KM/H</div><div class="g-btn">SPAWN</div>
+          </div>
+          <div class="garage-card" data-v="suv">
+            <div class="g-name">TITAN-X</div><div class="g-type">TACTICAL SUV</div>
+            <div class="g-stat">TOP: 180 KM/H</div><div class="g-btn">SPAWN</div>
+          </div>
+          <div class="garage-card" data-v="truck">
+            <div class="g-name">HAULER</div><div class="g-type">CARGO TRUCK</div>
+            <div class="g-stat">TOP: 140 KM/H</div><div class="g-btn">SPAWN</div>
+          </div>
+        </div>
+        <div class="garage-close">[ESC] CLOSE</div>
+      </div>`;
+    document.getElementById('shell').appendChild(modal);
+    modal.querySelectorAll('.garage-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        const v = card.getAttribute('data-v');
+        const spawnPos = new THREE.Vector3(140, 0, 68);
+        if (v === 'car') { carModel.root.position.copy(spawnPos); showToast('VELA GT  ·  SPAWNED AT GARAGE'); }
+        else if (v === 'bike') { bikeModel.root.position.copy(spawnPos); showToast('NEXUS 900  ·  SPAWNED AT GARAGE'); }
+        else if (v === 'suv') { suvModel.root.position.copy(spawnPos); showToast('TITAN-X  ·  SPAWNED AT GARAGE'); }
+        else if (v === 'truck') { truckModel.root.position.copy(spawnPos); showToast('HAULER  ·  SPAWNED AT GARAGE'); }
+        modal.remove();
+      });
+    });
+    document.addEventListener('keydown', function escClose(e) {
+      if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escClose); }
+    });
+  }
+
+  // Load saved progress
+  try {
+    if (localStorage.getItem('nexora_villa') === '1') state.ownedVilla = true;
+    const savedMoney = localStorage.getItem('nexora_money');
+    if (savedMoney) state.money = parseInt(savedMoney, 10);
+  } catch {}
+
   let mapTimer = 0;
   function animate() {
     requestAnimationFrame(animate);
@@ -1327,8 +1619,9 @@ RectAreaLightUniformsLib.init();
   // INPUTS
   function onKeyDown(e) {
     const key = e.key.toLowerCase();
-    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) e.preventDefault();
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab'].includes(key)) e.preventDefault();
     if (key === 'escape') { setPause(!state.paused); return; }
+    if (key === 'tab' && !e.repeat) { openWW(); return; }
     if ((key === 'e' || key === 'f') && !e.repeat) { doInteract(); return; }
     if (key === 'r' && !e.repeat) { reloadWeapon(); return; }
     if (key === '1') { switchWeapon(0); return; }
@@ -1340,7 +1633,7 @@ RectAreaLightUniformsLib.init();
     if (key === ' ' && !e.repeat && !state.inCar && !state.inBike) { state.hop = 0.48; player.bob.position.y = 0.03; }
     held.add(key);
   }
-  function onKeyUp(e) { held.delete(e.key.toLowerCase()); }
+  function onKeyUp(e) { if (e.key.toLowerCase() === 'tab') { e.preventDefault(); if (state.weaponWheelOpen) closeWW(); return; } held.delete(e.key.toLowerCase()); }
   addEventListener('keydown', onKeyDown); addEventListener('keyup', onKeyUp); addEventListener('blur', () => { held.clear(); state.isFiring = false; state.isAiming = false; });
 
   const canvas = $('#world');
@@ -1383,6 +1676,43 @@ RectAreaLightUniformsLib.init();
       switchWeapon(idx);
     });
   });
+
+  // ── WEAPON WHEEL (Tab hold) ──
+  const wwEl = document.getElementById('weaponWheel');
+  const wwCenter = wwEl.querySelector('.ww-center');
+  const wepIcons = ['🔫','⚡','⚔️','💥','🎯'];
+  const wepAngles = [270, 342, 54, 126, 198]; // degrees for 5 slots evenly-ish around circle
+  const radius = 110;
+  const wwSlots = WEAPONS.map((wep, i) => {
+    const slot = document.createElement('div'); slot.className = 'ww-slot' + (i === 0 ? ' active' : '');
+    slot.innerHTML = `<span class="ww-key">${i+1}</span><span class="ww-wname">${wep.name}</span><span class="ww-wtype">${wep.type}</span>`;
+    const angleRad = (wepAngles[i] - 90) * Math.PI / 180;
+    const tx = Math.cos(angleRad) * radius - 45;
+    const ty = Math.sin(angleRad) * radius - 30;
+    slot.style.transform = `translate(${tx}px, ${ty}px)`;
+    slot.style.borderTopColor = wep.dotColor;
+    slot.addEventListener('mouseenter', () => { state.weaponWheelHovered = i; updateWWHighlight(); });
+    slot.addEventListener('click', () => { switchWeapon(i); closeWW(); });
+    wwCenter.appendChild(slot); return slot;
+  });
+  function updateWWHighlight() {
+    wwSlots.forEach((s, i) => {
+      s.classList.toggle('active', i === state.currentWeaponIndex);
+      s.classList.toggle('hovered', i === state.weaponWheelHovered);
+    });
+    const hub = document.getElementById('wwHub');
+    if (hub) hub.textContent = WEAPONS[state.weaponWheelHovered].name;
+  }
+  function openWW() {
+    if (state.paused) return;
+    state.weaponWheelOpen = true; wwEl.classList.add('show');
+    state.weaponWheelHovered = state.currentWeaponIndex;
+    updateWWHighlight();
+  }
+  function closeWW() {
+    state.weaponWheelOpen = false; wwEl.classList.remove('show');
+    if (state.weaponWheelHovered !== state.currentWeaponIndex) switchWeapon(state.weaponWheelHovered);
+  }
 
   $('#resumeButton').addEventListener('click', () => setPause(false));
 
