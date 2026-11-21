@@ -51,11 +51,16 @@ RectAreaLightUniformsLib.init();
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const ssaoPass = new SSAOPass(scene, camera, innerWidth, innerHeight);
-  ssaoPass.kernelRadius = 16;
-  ssaoPass.minDistance = 0.005;
-  ssaoPass.maxDistance = 0.1;
-  composer.addPass(ssaoPass);
+  let ssaoPass = null;
+  try {
+    ssaoPass = new SSAOPass(scene, camera, innerWidth, innerHeight);
+    ssaoPass.kernelRadius = 16;
+    ssaoPass.minDistance = 0.005;
+    ssaoPass.maxDistance = 0.1;
+    composer.addPass(ssaoPass);
+  } catch (err) {
+    console.warn('SSAOPass initialization skipped:', err);
+  }
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.6, 0.75);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
@@ -307,48 +312,6 @@ RectAreaLightUniformsLib.init();
   buildResidentialVilla(60, 48);
   // SECOND VILLA
   buildResidentialVilla(60, 95);
-
-  // POLICE STATION BUILDING
-  function buildPoliceStation(x, z) {
-    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
-    const wallMat = mat(0xccd4d9, 0.78, 0.06);
-    const blueTrim = mat(0x1a3660, 0.6, 0.15);
-    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x8ab8d4, roughness: 0.12, metalness: 0.3, clearcoat: 1 });
-    // Main building body
-    addBox(g, wallMat, 0, 4, 0, 24, 8, 16);
-    addBox(g, blueTrim, 0, 0.3, 0, 25, 0.6, 17);
-    addBox(g, blueTrim, 0, 8.3, 0, 25, 0.6, 17);
-    // Blue stripe
-    addBox(g, blueTrim, 0, 4.0, 8.08, 24, 1.8, 0.1, false);
-    // Windows
-    for (let i = -3; i <= 3; i++) {
-      addBox(g, glassMat, i * 3.2, 4.5, 8.1, 2.0, 2.4, 0.08, false);
-      addBox(g, glassMat, i * 3.2, 4.5, -8.1, 2.0, 2.4, 0.08, false);
-    }
-    // "POLICE" sign
-    const signTex = makeTexture((c, w, h) => {
-      c.fillStyle = '#0d1e36'; c.fillRect(0, 0, w, h);
-      c.strokeStyle = '#4a8ef0'; c.lineWidth = 5; c.strokeRect(5, 5, w-10, h-10);
-      c.fillStyle = '#ffffff'; c.shadowColor = '#4a8ef0'; c.shadowBlur = 24;
-      c.font = '800 72px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('POLICE', w/2, h*0.45);
-      c.font = '500 20px monospace'; c.fillText('AFTERLIGHT PD  ·  DISTRICT 4', w/2, h*0.78);
-    });
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.6), new THREE.MeshBasicMaterial({ map: signTex, transparent: false, side: THREE.DoubleSide, toneMapped: false }));
-    sign.position.set(0, 7, 8.2); g.add(sign);
-    // Entrance steps
-    for (let s = 0; s < 4; s++) addBox(g, mat(0xb5bdc4, 0.9), 0, s*0.22+0.1, 9.2+s*0.35, 7, 0.22, 0.6, false);
-    // Door
-    addBox(g, mat(0x101828, 0.3, 0.3), 0, 1.9, 8.1, 2.4, 3.2, 0.1, false);
-    // Parking lot - police cars parked
-    const parked = makeCar(0x1d3046, true); parked.root.position.set(-6, 0, z < 0 ? -13 : 13); parked.root.rotation.y = Math.PI/2; scene.add(parked.root);
-    const parkedSiren = mat(0x4d9dff, 0.25, 0.1, { emissive: 0x1764ed, emissiveIntensity: 2 });
-    addBox(parked.root, mat(0x1a2a40, 0.5), 0, 1.94, 0.05, 0.94, 0.12, 0.33, false);
-    addBox(parked.root, parkedSiren, 0, 2.08, 0.05, 0.4, 0.18, 0.3, false);
-    // Blue lights
-    const blueLight = new THREE.PointLight(0x4488ff, 8, 14); blueLight.position.set(x, 5, z); scene.add(blueLight);
-    buildings.push({ x, z, w: 24, d: 16, h: 8.6, group: g });
-  }
-  buildPoliceStation(185, -55);
 
   // VEHICLE GARAGE MARKER
   const garageMarker = new THREE.Group(); garageMarker.position.set(140, 0, 68); scene.add(garageMarker);
@@ -839,6 +802,50 @@ RectAreaLightUniformsLib.init();
     crossTraffic.push({ ...ct, speed: i % 2 ? 4.2 + i * 0.4 : -(4.5 + i * 0.3), lane: -3, hitCooldown: 0 });
   }
 
+  
+
+  // POLICE STATION BUILDING
+  function buildPoliceStation(x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    const wallMat = mat(0xccd4d9, 0.78, 0.06);
+    const blueTrim = mat(0x1a3660, 0.6, 0.15);
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x8ab8d4, roughness: 0.12, metalness: 0.3, clearcoat: 1 });
+    // Main building body
+    addBox(g, wallMat, 0, 4, 0, 24, 8, 16);
+    addBox(g, blueTrim, 0, 0.3, 0, 25, 0.6, 17);
+    addBox(g, blueTrim, 0, 8.3, 0, 25, 0.6, 17);
+    // Blue stripe
+    addBox(g, blueTrim, 0, 4.0, 8.08, 24, 1.8, 0.1, false);
+    // Windows
+    for (let i = -3; i <= 3; i++) {
+      addBox(g, glassMat, i * 3.2, 4.5, 8.1, 2.0, 2.4, 0.08, false);
+      addBox(g, glassMat, i * 3.2, 4.5, -8.1, 2.0, 2.4, 0.08, false);
+    }
+    // "POLICE" sign
+    const signTex = makeTexture((c, w, h) => {
+      c.fillStyle = '#0d1e36'; c.fillRect(0, 0, w, h);
+      c.strokeStyle = '#4a8ef0'; c.lineWidth = 5; c.strokeRect(5, 5, w-10, h-10);
+      c.fillStyle = '#ffffff'; c.shadowColor = '#4a8ef0'; c.shadowBlur = 24;
+      c.font = '800 72px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('POLICE', w/2, h*0.45);
+      c.font = '500 20px monospace'; c.fillText('AFTERLIGHT PD  ·  DISTRICT 4', w/2, h*0.78);
+    });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(10, 2.6), new THREE.MeshBasicMaterial({ map: signTex, transparent: false, side: THREE.DoubleSide, toneMapped: false }));
+    sign.position.set(0, 7, 8.2); g.add(sign);
+    // Entrance steps
+    for (let s = 0; s < 4; s++) addBox(g, mat(0xb5bdc4, 0.9), 0, s*0.22+0.1, 9.2+s*0.35, 7, 0.22, 0.6, false);
+    // Door
+    addBox(g, mat(0x101828, 0.3, 0.3), 0, 1.9, 8.1, 2.4, 3.2, 0.1, false);
+    // Parking lot - police cars parked
+    const parked = makeCar(0x1d3046, true); parked.root.position.set(-6, 0, z < 0 ? -13 : 13); parked.root.rotation.y = Math.PI/2; scene.add(parked.root);
+    const parkedSiren = mat(0x4d9dff, 0.25, 0.1, { emissive: 0x1764ed, emissiveIntensity: 2 });
+    addBox(parked.root, mat(0x1a2a40, 0.5), 0, 1.94, 0.05, 0.94, 0.12, 0.33, false);
+    addBox(parked.root, parkedSiren, 0, 2.08, 0.05, 0.4, 0.18, 0.3, false);
+    // Blue lights
+    const blueLight = new THREE.PointLight(0x4488ff, 8, 14); blueLight.position.set(x, 5, z); scene.add(blueLight);
+    buildings.push({ x, z, w: 24, d: 16, h: 8.6, group: g });
+  }
+  buildPoliceStation(185, -55);
+
   const policeCar = makeCar(0x1d3046, true); policeCar.speed = 0; policeCar.root.position.set(120, 0, -155); policeCar.root.visible = false; scene.add(policeCar.root);
   const sirenRed = mat(0xff4b58, 0.25, 0.1, { emissive: 0xe01830, emissiveIntensity: 4 });
   const sirenBlue = mat(0x4d9dff, 0.25, 0.1, { emissive: 0x1764ed, emissiveIntensity: 4 });
@@ -1121,6 +1128,7 @@ RectAreaLightUniformsLib.init();
     renderer.shadowMap.enabled = state.highQuality;
     sunMoon.shadow.mapSize.set(state.highQuality ? 2048 : 1024, state.highQuality ? 2048 : 1024);
     bloom.strength = state.highQuality ? 0.85 : 0.42;
+    if (ssaoPass) ssaoPass.enabled = state.highQuality;
     renderer.shadowMap.needsUpdate = true;
     ui.quality.textContent = state.highQuality ? 'ULTRA' : 'BALANCED';
     ui.quality.classList.toggle('balanced', !state.highQuality);
@@ -1740,5 +1748,5 @@ RectAreaLightUniformsLib.init();
   ui.toastText.textContent = 'AFTERLIGHT DISTRICT  ·  LIVE'; ui.toast.classList.add('show'); state.toast = 3.4;
   composer.render();
   animate();
-  setTimeout(() => { ui.loading.classList.add('hidden'); }, 700);
+  setTimeout(() => { ui.loading.classList.add('hidden'); }, 200);
 })();
