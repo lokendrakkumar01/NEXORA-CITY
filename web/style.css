@@ -177,3 +177,50 @@
     60%  { opacity: 1; transform: translate(-50%,-50%) scale(1.1) rotate(10deg); }
     100% { opacity: 0; transform: translate(-50%,-50%) scale(1.4) rotate(0deg); }
 }
+
+/* 14. Weapon selector bar */
+.weapon-selector {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+}
+.wep-slot {
+  flex: 1;
+  background: rgba(10, 22, 34, 0.7);
+  border: 1px solid rgba(98, 236, 223, 0.2);
+  color: #8fa3a9;
+  padding: 4px 6px;
+  font: 8px var(--mono);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.wep-slot:hover {
+  background: rgba(98, 236, 223, 0.15);
+  border-color: rgba(98, 236, 223, 0.4);
+  color: #fff;
+}
+.wep-slot.active {
+  background: linear-gradient(135deg, rgba(20, 50, 60, 0.9), rgba(10, 30, 40, 0.95));
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+  box-shadow: 0 0 10px rgba(98, 236, 223, 0.3);
+}
+.wep-key {
+  font-weight: 700;
+  opacity: 0.75;
+}
+.wep-name {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+#weaponType {
+  color: var(--cyan);
+  margin-left: 4px;
+  font: 8px var(--mono);
+  opacity: 0.85;
+}
