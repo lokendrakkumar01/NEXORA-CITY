@@ -16,7 +16,7 @@
     <div class="vignette"></div>
     <header class="topbar">
       <a class="brand" href="#" aria-label="Nexora City home"><span class="brand-mark">N</span><span>NEXORA<span class="brand-light">CITY</span><small>AFTERLIGHT DISTRICT</small></span></a>
-      <div class="top-right"><span class="live-dot"></span><span>LIVE CITY</span><i></i><span id="clock">21:48</span><span class="weather">◒ &nbsp; 19°</span></div>
+      <div class="top-right"><span class="live-dot"></span><span>LIVE CITY</span><i></i><span id="clock">21:48</span><span class="weather">◒ &nbsp; 19°</span><button id="qualityToggle" class="quality-button" title="Toggle graphics quality">ULTRA</button></div>
     </header>
     <section class="mission-panel">
       <div class="eyebrow"><span class="eyebrow-line"></span> CURRENT OBJECTIVE <span class="mission-type">STORY · 01</span></div>
@@ -38,9 +38,10 @@
     <div class="toast" id="toast"><span>✦</span><strong></strong></div>
     <div class="vehicle-hud" id="vehicleHud"><div class="speed"><strong id="speedValue">000</strong><span>KM/H</span></div><div class="gear">GEAR <b id="gearValue">P</b></div><div class="vehicle-name">VELA <b>GT</b><small>HYBRID COUPE</small></div></div>
     <div class="pause-overlay" id="pauseOverlay"><div class="pause-card"><div class="eyebrow">NEXORA CITY <span class="mission-type">PAUSED</span></div><h2>TAKE A <em>BREATH.</em></h2><p>Your story is still waiting.</p><div class="pause-stat"><span>MISSION</span><b id="pauseMission">LAST LIGHT</b></div><button id="resumeButton">BACK TO THE CITY <span>→</span></button><small>PRESS ESC TO RETURN</small></div></div>
-    <footer class="controls"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><label>MOVE</label></span><i></i><span><kbd>SHIFT</kbd><label>SPRINT</label></span><i></i><span><kbd>SPACE</kbd><label>HOP</label></span><i></i><span><kbd>E</kbd><label>INTERACT</label></span><i></i><span><kbd>ESC</kbd><label>PAUSE</label></span></footer>
+    <footer class="controls"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><label>MOVE / DRIVE</label></span><i></i><span><kbd>SHIFT</kbd><label>SPRINT</label></span><i></i><span><kbd>SPACE</kbd><label>HOP / BRAKE</label></span><i></i><span><kbd>E</kbd><label>INTERACT</label></span><i></i><span><kbd>MOUSE</kbd><label>LOOK</label></span><i></i><span><kbd>ESC</kbd><label>PAUSE</label></span></footer>
     <div class="reticle"><i></i></div>
+    <div class="loading-screen" id="loadingScreen"><div class="loading-logo">N</div><div class="loading-title">AFTERLIGHT <span>DISTRICT</span></div><div class="loading-track"><i></i></div><small>BUILDING A CITY THAT NEVER SLEEPS</small></div>
   </main>
-  <script src="game.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>

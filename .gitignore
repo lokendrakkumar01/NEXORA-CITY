@@ -13,6 +13,7 @@ Saved/
 # Node generated files
 node_modules/
 npm-debug.log*
+web/dist/
 
 # Editor/OS noise
 .DS_Store

@@ -1,16 +1,16 @@
-# LOKI CITY — first playable prototype
+# NEXORA CITY — Afterlight browser build
 
-Original open world action adventure prototype for Windows and Unreal Engine 5. The code in this repository provides a small C++ gameplay foundation. It does not contain authored character, vehicle, building, animation, or city assets; create those in Unreal Editor as described below.
+Original open world action adventure project for Windows. It contains a playable browser based 3D city built from original procedural Three.js geometry, plus an Unreal Engine 5.6 C++ starter module. The Unreal module is a separate foundation and still needs Blueprint setup and Unreal assets as described below.
 
-## Play the browser prototype
+## Play the browser 3D build
 
-The browser-playable city scene is in `web/`. It runs locally without installing Unreal Engine or any npm packages:
+The browser-playable third-person 3D city scene is in `web/`. It uses Three.js and Vite. Node.js is required; Unreal Engine is not required to run the browser build:
 
 1. Install Node.js if it is not already installed.
-2. Open a terminal in the `web` folder and run `npm start`.
-3. Open `http://localhost:4173` in a browser.
+2. Open a terminal in the `web` folder and run `npm install` once.
+3. Run `npm start` and open `http://localhost:4173` in a browser.
 
-Use **WASD** to move, **Shift** to sprint, **Space** to hop, **E** near the Vela GT to enter or exit, and **Escape** to pause. In the car, **W/S** accelerate/reverse and **A/D** steer. Reach Neon Market to complete the first delivery objective. The browser version is a lightweight original canvas-based visual prototype; it is separate from the Unreal C++ project and does not load Unreal assets.
+Use **WASD** to move, **Shift** to sprint, **Space** to hop, drag the mouse to look around, scroll to zoom, **E** near the Vela GT to enter or exit, and **Escape** to pause. In the car, **W/S** accelerate/reverse, **A/D** steer, and **Space** brakes. Reach Neon Market to complete the delivery objective. The city, buildings, lighting, weather, traffic, pedestrians, car and character are generated as original Three.js geometry and materials. Press **ULTRA/BALANCED** in the upper-right to adjust shadows, bloom and resolution for performance.
 
 ## Project setup
 
