@@ -12,6 +12,16 @@ The browser-playable third-person 3D city scene is in `web/`. It uses Three.js a
 
 Use **WASD** to move, **Shift** to sprint, **Space** to hop, drag the mouse to look around, scroll to zoom, **E** near the Vela GT to enter or exit, and **Escape** to pause. In the car, **W/S** accelerate/reverse, **A/D** steer, and **Space** brakes. Reach Neon Market to complete the delivery objective. The city, buildings, lighting, weather, traffic, pedestrians, car and character are generated as original Three.js geometry and materials. Press **ULTRA/BALANCED** in the upper-right to adjust shadows, bloom and resolution for performance.
 
+## Deploy on Render
+
+The repository includes `render.yaml` for a Render Static Site. In Render, choose **New → Blueprint**, connect `lokendrakkumar01/NEXORA-CITY`, and deploy the `main` branch. Render reads the build settings from the Blueprint. If setting up a Static Site manually, use:
+
+- Root Directory: `web`
+- Build Command: `npm ci && npm run build`
+- Publish Directory: `dist`
+
+After the initial deploy finishes, Render shows the public `onrender.com` URL. A linked site can redeploy automatically when new commits are pushed to its selected branch. See [Render's static site guide](https://render.com/docs/static-sites).
+
 ## Project setup
 
 1. Install Unreal Engine 5.6 and Visual Studio 2022 with **Game development with C++**, the Windows SDK, and MSVC. The project file currently targets UE 5.6 (`LokiCity.uproject`).
