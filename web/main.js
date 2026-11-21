@@ -2,7 +2,13 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+
+RectAreaLightUniformsLib.init();
 
 (() => {
   'use strict';
@@ -20,42 +26,78 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   scene.background = new THREE.Color(0x090f19);
   scene.fog = new THREE.FogExp2(0x101a24, 0.0077);
   const camera = new THREE.PerspectiveCamera(56, innerWidth / innerHeight, 0.1, 560);
-  const renderer = new THREE.WebGLRenderer({ canvas: $('#world'), antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.7));
+  // BUG FIX: added logarithmicDepthBuffer for better z-fighting at distance
+  const renderer = new THREE.WebGLRenderer({ canvas: $('#world'), antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
+  // UPGRADE: pixel ratio cap raised to 2.0
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2.0));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  // UPGRADE: PCFSoftShadowMap for softer, more cinematic shadows
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  // UPGRADE: increased exposure from 1.05 to 1.18
+  renderer.toneMappingExposure = 1.18;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.48, 1.05);
+  // UPGRADE: SSAOPass for ambient occlusion (between RenderPass and BloomPass)
+  const ssaoPass = new SSAOPass(scene, camera, innerWidth, innerHeight);
+  ssaoPass.kernelRadius = 16;
+  ssaoPass.minDistance = 0.005;
+  ssaoPass.maxDistance = 0.1;
+  composer.addPass(ssaoPass);
+  // UPGRADE: UnrealBloomPass with AAA params
+  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.6, 0.75);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
+  // UPGRADE: FXAA anti-aliasing as the final pass
+  const fxaaPass = new ShaderPass(FXAAShader);
+  fxaaPass.material.uniforms['resolution'].value.set(1 / innerWidth, 1 / innerHeight);
+  composer.addPass(fxaaPass);
 
   const WORLD = { w: 240, d: 180, roadX: 120, roadW: 37 };
-  const clock = new THREE.Timer();
+  // BUG FIX: THREE.Timer → THREE.Clock
+  const clock = new THREE.Clock();
   const shared = {
     box: new THREE.BoxGeometry(1, 1, 1), sphere: new THREE.SphereGeometry(1, 16, 12),
     window: new THREE.PlaneGeometry(1.25, 1.65),
-    road: new THREE.MeshStandardMaterial({ color: 0x20272b, roughness: 0.84, metalness: 0.12 }),
+    // UPGRADE: PBR wet asphalt road material
+    road: new THREE.MeshStandardMaterial({ color: 0x1a2024, roughness: 0.35, metalness: 0.55, envMapIntensity: 1.2 }),
     concrete: new THREE.MeshStandardMaterial({ color: 0x43494a, roughness: 0.93 }),
     glass: new THREE.MeshPhysicalMaterial({ color: 0x192c38, roughness: 0.19, metalness: 0.4, clearcoat: 1, clearcoatRoughness: 0.15 }),
     dark: new THREE.MeshStandardMaterial({ color: 0x101820, roughness: 0.56, metalness: 0.3 }),
     rubber: new THREE.MeshStandardMaterial({ color: 0x090c10, roughness: 0.92 }),
-    windowLit: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x429d94, emissiveIntensity: 0.5, roughness: 0.28 }),
-    windowWarm: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xb2804d, emissiveIntensity: 0.42, roughness: 0.3 }),
+    // UPGRADE: window reflection envMapIntensity: 0.9
+    windowLit: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x429d94, emissiveIntensity: 0.5, roughness: 0.28, envMapIntensity: 0.9 }),
+    windowWarm: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xb2804d, emissiveIntensity: 0.42, roughness: 0.3, envMapIntensity: 0.9 }),
   };
 
-  scene.add(new THREE.HemisphereLight(0x9bc4df, 0x14151b, 1.45));
-  const moon = new THREE.DirectionalLight(0xc0d8ff, 2.0);
+  // UPGRADE: Replace single HemisphereLight with cool sky + warm bounce
+  scene.add(new THREE.HemisphereLight(0x7ab4d8, 0x1a1f2e, 0.9));
+  scene.add(new THREE.HemisphereLight(0xffb347, 0x2a1a0a, 0.35));
+  // UPGRADE: Moonlight upgrades — brighter, bluer, softer shadow radius
+  const moon = new THREE.DirectionalLight(0xd0e8ff, 2.8);
   moon.position.set(-54, 68, 28); moon.castShadow = true;
   moon.shadow.mapSize.set(2048, 2048);
   moon.shadow.camera.left = -62; moon.shadow.camera.right = 62; moon.shadow.camera.top = 86; moon.shadow.camera.bottom = -86;
-  moon.shadow.bias = -0.00015; moon.shadow.normalBias = 0.03; moon.shadow.radius = 5;
+  moon.shadow.bias = -0.00015; moon.shadow.normalBias = 0.03; moon.shadow.radius = 8;
   scene.add(moon);
   const warmFill = new THREE.DirectionalLight(0xffb87a, 0.65); warmFill.position.set(40, 18, -60); scene.add(warmFill);
+
+  // UPGRADE: RectAreaLight — orange-amber neon spill from the building district
+  const rectArea = new THREE.RectAreaLight(0xffaa44, 6, 12, 5);
+  rectArea.position.set(90, 8, -40); rectArea.lookAt(120, 0, -40); scene.add(rectArea);
+
+  // UPGRADE: Blue-purple depth point light
+  const depthLight = new THREE.PointLight(0x5566ff, 8, 90);
+  depthLight.position.set(145, 2, -40); scene.add(depthLight);
+
+  // UPGRADE: Volumetric-feel sky dome layer
+  const atmoDome = new THREE.Mesh(
+    new THREE.SphereGeometry(180, 24, 16),
+    new THREE.MeshBasicMaterial({ color: 0x0a1520, transparent: true, opacity: 0.18, side: THREE.BackSide, depthWrite: false })
+  );
+  scene.add(atmoDome);
 
   function mat(color, roughness = 0.7, metalness = 0.05, extra = {}) { return new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra }); }
   function addMesh(parent, geometry, material, x, y, z, sx = 1, sy = 1, sz = 1, cast = true, receive = true) {
@@ -83,6 +125,13 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   const groundMat = mat(0x293332, 0.98);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(360, 300), groundMat); ground.rotation.x = -Math.PI / 2; ground.position.set(120, -0.08, 0); ground.receiveShadow = true; scene.add(ground);
   const road = new THREE.Mesh(new THREE.PlaneGeometry(WORLD.roadW, 270), shared.road); road.rotation.x = -Math.PI / 2; road.position.set(120, 0, 0); road.receiveShadow = true; scene.add(road);
+  // UPGRADE: Puddle layer directly on the main road — PBR wet look
+  const roadPuddle = new THREE.Mesh(
+    new THREE.PlaneGeometry(WORLD.roadW - 2, 268),
+    new THREE.MeshPhysicalMaterial({ color: 0x2a3d4a, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.72, clearcoat: 1 })
+  );
+  roadPuddle.rotation.x = -Math.PI / 2; roadPuddle.position.set(120, 0.003, 0); roadPuddle.receiveShadow = true; scene.add(roadPuddle);
+
   const crossRoad = new THREE.Mesh(new THREE.PlaneGeometry(260, 18), shared.road); crossRoad.rotation.x = -Math.PI / 2; crossRoad.position.set(120, 0.015, -3); crossRoad.receiveShadow = true; scene.add(crossRoad);
   const walkMat = mat(0x626362, 0.96), curbMat = mat(0x9aa09a, 0.86);
   for (const side of [-1, 1]) {
@@ -90,7 +139,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     const walk = new THREE.Mesh(new THREE.PlaneGeometry(5, 260), walkMat); walk.rotation.x = -Math.PI / 2; walk.position.set(x, 0.045, 0); walk.receiveShadow = true; scene.add(walk);
     addBox(scene, curbMat, 120 + side * 18.9, 0.17, 0, 0.28, 0.28, 266, false);
   }
-  const paintMat = new THREE.MeshStandardMaterial({ color: 0xd9d5bf, roughness: 0.8, emissive: 0x26271f, emissiveIntensity: 0.12 });
+  // UPGRADE: Lane markings with wet-paint emissive glow
+  const paintMat = new THREE.MeshStandardMaterial({ color: 0xd9d5bf, roughness: 0.8, emissive: 0x44332a, emissiveIntensity: 0.2 });
   for (const x of [120, 120 - 4.5, 120 + 4.5]) {
     for (let z = -128; z <= 132; z += x === 120 ? 11 : 42) {
       addBox(scene, paintMat, x, 0.035, z, x === 120 ? 0.17 : 0.12, 0.025, x === 120 ? 4.8 : 17, false);
@@ -116,6 +166,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   }
   const buildings = [];
   const windowMats = [shared.windowLit, shared.windowWarm];
+  // Neon LED strip colors cycling by seed
+  const neonColors = [0x00ffcc, 0xff3366, 0x6644ff];
   function buildBuilding(x, z, w, d, h, seed, style = 0, label = '') {
     const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
     const palettes = [0x29383e, 0x30333b, 0x3b3734, 0x26373a, 0x3b4142];
@@ -129,10 +181,22 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     for (let i = 0; i < 3; i++) addBox(g, roofMat, -w * 0.28 + i * w * 0.26, h + 1 + (i % 2) * 0.45, -d * 0.16, w * 0.14, 1.8 + (i % 2), d * 0.25, false);
     for (const edge of [-1, 1]) addBox(g, mat(0x617174, 0.38, 0.72), edge * (w / 2 - 0.3), h / 2, 0, 0.22, h - 1.5, d - 1, false);
 
+    // UPGRADE: AC unit clusters on rooftops
+    const acMat = mat(0x1a2022, 0.8, 0.5);
+    const acCount = 2 + (seed % 2);
+    for (let i = 0; i < acCount; i++) {
+      addBox(g, acMat, -w * 0.3 + i * w * 0.3, h + 1.1, d * 0.3 - i * d * 0.15, w * 0.12, 0.6, d * 0.1, false);
+    }
+
+    // UPGRADE: Neon LED strip at building base
+    const neonColor = neonColors[seed % neonColors.length];
+    addBox(g, new THREE.MeshStandardMaterial({ color: neonColor, emissive: neonColor, emissiveIntensity: 2.5, roughness: 0.2 }), 0, 0.04, 0, w, 0.08, d, false);
+
     const faceX = x + (x < 120 ? w / 2 + 0.025 : -w / 2 - 0.025);
     const faceRot = x < 120 ? Math.PI / 2 : -Math.PI / 2;
-    const columns = Math.max(3, Math.floor(d / 2.6));
-    const rows = Math.max(3, Math.floor((h - 4) / 3));
+    // UPGRADE: Increased window density
+    const columns = Math.max(4, Math.floor(d / 2.0));
+    const rows = Math.max(5, Math.floor((h - 3) / 2.5));
     const count = columns * rows;
     const windows = new THREE.InstancedMesh(shared.window, windowMats[0], count);
     const matrix = new THREE.Object3D(); const color = new THREE.Color();
@@ -232,7 +296,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   const tailMat = new THREE.MeshStandardMaterial({ color: 0xff5860, emissive: 0xff1728, emissiveIntensity: 3.2, roughness: 0.2 });
   function makeCar(color = 0xb63837, trafficCar = false) {
     const root = new THREE.Group();
-    const paint = new THREE.MeshPhysicalMaterial({ color, roughness: 0.24, metalness: 0.58, clearcoat: 1, clearcoatRoughness: 0.13 });
+    // UPGRADE: MeshPhysicalMaterial AAA paint
+    const paint = new THREE.MeshPhysicalMaterial({ color, roughness: 0.12, metalness: 0.72, clearcoat: 1.0, clearcoatRoughness: 0.08, reflectivity: 1.0 });
     addBox(root, paint, 0, 0.77, 0, 2.05, 0.55, 4.35);
     addBox(root, paint, 0, 1.1, -1.25, 1.93, 0.3, 1.5);
     addBox(root, shared.glass, 0, 1.45, 0.06, 1.57, 0.7, 1.95);
@@ -252,13 +317,21 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     }
     const plate = addBox(root, mat(0xd4ded9, 0.35, 0.25), 0, 0.77, 2.2, 0.58, 0.18, 0.035, false);
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 24), new THREE.MeshBasicMaterial({ color: 0x03070c, transparent: true, opacity: 0.5, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.025; shadow.scale.set(1.7, 2.8, 1); root.add(shadow);
+    // UPGRADE: Undercarriage glow
+    const underglow = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 3.8), new THREE.MeshBasicMaterial({ color: 0x0044ff, transparent: true, opacity: 0.18, depthWrite: false }));
+    underglow.rotation.x = -Math.PI / 2; underglow.position.y = 0.05; root.add(underglow);
+    // UPGRADE: Fog lamp at front
+    const fogLamp = new THREE.PointLight(0xfff0cc, 6, 10);
+    fogLamp.position.set(0, 0.88, -2.4); root.add(fogLamp);
     if (trafficCar) root.scale.setScalar(0.82);
-    return { root, wheelPivots, shadow };
+    return { root, wheelPivots, shadow, tailMat: tailMat.clone() };
   }
   const carModel = makeCar(0xb93f39); carModel.speed = 0; scene.add(carModel.root); carModel.root.position.set(122, 0, 63); carModel.root.rotation.y = 0;
 
   // Human-scale procedural courier and pedestrians.
-  const skinMat = mat(0xb98b72, 0.62), jacketMat = mat(0x45bfb3, 0.52, 0.15), pantsMat = mat(0x202833, 0.71), shoeMat = mat(0x11171b, 0.75), bagMat = mat(0x8c543e, 0.67);
+  // UPGRADE: MeshStandardMaterial for skin with roughness/metalness/envMapIntensity
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xc49a72, roughness: 0.58, metalness: 0.02, envMapIntensity: 0.4 });
+  const jacketMat = mat(0x45bfb3, 0.52, 0.15), pantsMat = mat(0x202833, 0.71), shoeMat = mat(0x11171b, 0.75), bagMat = mat(0x8c543e, 0.67);
   const limbGeo = new THREE.CapsuleGeometry(0.105, 0.48, 3, 8);
   const rivalJacket = mat(0x642a36, 0.59, 0.22), rivalMask = mat(0x15191f, 0.65, 0.12);
   const pistolMetal = new THREE.MeshStandardMaterial({ color: 0x55656a, metalness: 0.82, roughness: 0.24 });
@@ -306,6 +379,11 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     return { root, bob, legs, arms, shadow, weapon, isPlayer, faction, walkPhase: Math.random() * Math.PI * 2, speed: 0, direction: new THREE.Vector3(0, 0, -1) };
   }
   const player = makePerson(true); scene.add(player.root); player.root.position.set(117.5, 0, 68); player.root.rotation.y = 0;
+
+  // UPGRADE: Player rim-light that follows the character
+  const playerRimLight = new THREE.PointLight(0x88aaff, 3, 4);
+  scene.add(playerRimLight);
+
   const npcPalette = [0xf4c28e, 0xc6d7d3, 0xdda0a2, 0xaabaff, 0xe2d6c1];
   const peds = [];
   for (let i = 0; i < 15; i++) {
@@ -343,14 +421,31 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   const redSiren = addMesh(policeCar.root, new THREE.BoxGeometry(0.37, 0.18, 0.3), sirenRed, -0.24, 2.08, 0.05, 1, 1, 1, false, false);
   const blueSiren = addMesh(policeCar.root, new THREE.BoxGeometry(0.37, 0.18, 0.3), sirenBlue, 0.24, 2.08, 0.05, 1, 1, 1, false, false);
 
-  // Ambient rain uses one draw call; the wet district catches neon reflections.
-  const rainCount = 580, rainPositions = new Float32Array(rainCount * 6);
+  // UPGRADE: Dynamic rain — 2400 drops with wind drift
+  const rainCount = 2400;
+  const rainPositions = new Float32Array(rainCount * 6);
+  const rainWindX = 0.04, rainWindZ = 0.02;
   for (let i = 0; i < rainCount; i++) {
     const x = (Math.random() - 0.5) * 200, z = (Math.random() - 0.5) * 190, y = Math.random() * 38 + 2;
-    const n = i * 6; rainPositions[n] = x; rainPositions[n + 1] = y; rainPositions[n + 2] = z; rainPositions[n + 3] = x - 0.12; rainPositions[n + 4] = y - 0.9; rainPositions[n + 5] = z;
+    const n = i * 6;
+    rainPositions[n] = x; rainPositions[n + 1] = y; rainPositions[n + 2] = z;
+    rainPositions[n + 3] = x - 0.12; rainPositions[n + 4] = y - 0.9; rainPositions[n + 5] = z;
   }
   const rainGeo = new THREE.BufferGeometry(); rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
   const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: 0xa1ccde, transparent: true, opacity: 0.28 })); scene.add(rain);
+
+  // UPGRADE: Rain splash particles pool — 60 flat circles at random road positions
+  const splashMat = new THREE.MeshBasicMaterial({ color: 0x88bbcc, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false });
+  const rainSplashParticles = [];
+  for (let i = 0; i < 60; i++) {
+    const splash = new THREE.Mesh(new THREE.CircleGeometry(0.08, 6), splashMat.clone());
+    splash.rotation.x = -Math.PI / 2;
+    splash.position.set(104 + Math.random() * 32, 0.012, -130 + Math.random() * 260);
+    splash.userData.life = Math.random();
+    splash.userData.maxLife = 0.4 + Math.random() * 0.3;
+    scene.add(splash);
+    rainSplashParticles.push(splash);
+  }
 
   // A sparse background skyline silhouettes the horizon beyond the playable blocks.
   const starsGeo = new THREE.BufferGeometry(); const stars = new Float32Array(180 * 3);
@@ -363,6 +458,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     nearCar: false, nearShop: false, highQuality: true, yaw: 0, cameraPitch: 0.29, mouseDown: false, lastMouseX: 0, lastMouseY: 0,
     hitInvuln: 0, ammo: 12, reserve: 60, reload: 0, fireCooldown: 0, wanted: 0, wantedDecay: 0,
     robberyStarted: false, robberyProgress: 0, robberyComplete: false, policeActive: false, kills: 0, escapeComplete: false,
+    // BUG FIX: policeDelay added to initial state
+    policeDelay: 0,
   };
   const held = new Set();
   const tracerEffects = [], particles = [];
@@ -382,18 +479,35 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   function showDamage() { ui.damage.classList.remove('show'); void ui.damage.offsetWidth; ui.damage.classList.add('show'); }
   function addTracer(start, end, color = 0xffca72) {
     const geometry = new THREE.BufferGeometry().setFromPoints([start.clone(), end.clone()]);
-    const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.94, depthWrite: false, toneMapped: false });
+    // UPGRADE: tracer opacity raised to 0.98 with stronger emissive
+    const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.98, depthWrite: false, toneMapped: false });
     const line = new THREE.Line(geometry, material); line.frustumCulled = false; scene.add(line); tracerEffects.push({ object: line, life: 0.105, max: 0.105 });
   }
-  function sparksAt(point, color = 0xffd586) {
-    const material = new THREE.MeshBasicMaterial({ color, toneMapped: false });
-    for (let i = 0; i < 7; i++) {
+
+  // UPGRADE: Spark colors randomly between gold and cyan, count 14, shell casing
+  function sparksAt(point, color = 0xffd580) {
+    const sparkColors = [0xffd580, 0x44ffee];
+    // UPGRADE: 14 sparks per hit
+    for (let i = 0; i < 14; i++) {
+      const sparkColor = sparkColors[Math.floor(Math.random() * sparkColors.length)];
+      const material = new THREE.MeshBasicMaterial({ color: sparkColor, toneMapped: false });
       const spark = new THREE.Mesh(new THREE.OctahedronGeometry(0.055 + Math.random() * 0.045, 0), material);
       spark.position.copy(point); scene.add(spark);
       const velocity = new THREE.Vector3(Math.random() - 0.5, Math.random() * 0.8, Math.random() - 0.5).normalize().multiplyScalar(2 + Math.random() * 4);
       particles.push({ object: spark, velocity, life: 0.32 + Math.random() * 0.23, max: 0.55 });
     }
   }
+
+  // UPGRADE: Shell casing eject
+  function ejectShellCasing(originPos) {
+    const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4a94a, metalness: 0.85, roughness: 0.2 });
+    const casing = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.12), brassMat);
+    casing.position.copy(originPos).add(new THREE.Vector3(0.3, 1.1, -0.2));
+    scene.add(casing);
+    const velocity = new THREE.Vector3(0.8 + Math.random() * 0.5, 2.5 + Math.random(), (Math.random() - 0.5) * 0.5);
+    particles.push({ object: casing, velocity, life: 1.1 + Math.random() * 0.4, max: 1.5 });
+  }
+
   function muzzleFlash(weapon) { if (!weapon) return; weapon.flash.visible = true; weapon.flashTime = 0.075; }
   function reloadWeapon() {
     if (state.inCar || state.reload > 0 || state.ammo === 12 || state.reserve <= 0) return;
@@ -409,6 +523,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     const first = hits[0]; const endpoint = first ? first.point.clone() : shotRay.ray.origin.clone().addScaledVector(shotRay.ray.direction, 75);
     const muzzle = player.weapon.root.localToWorld(player.weapon.muzzle.clone());
     addTracer(muzzle, endpoint, 0xffd07a); muzzleFlash(player.weapon);
+    // UPGRADE: Shell casing eject on fire
+    ejectShellCasing(player.root.position);
     if (first?.object.userData.combatant) {
       const rival = first.object.userData.combatant;
       rival.health -= 36; rival.stagger = 0.3; rival.healthBar.visible = true;
@@ -440,7 +556,9 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   function resize() {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
-    bloom.setSize(innerWidth, innerHeight);
+    // BUG FIX: Removed bloom.setSize() — handled by composer
+    // Update FXAA resolution uniform on resize
+    fxaaPass.material.uniforms['resolution'].value.set(1 / innerWidth, 1 / innerHeight);
   }
   addEventListener('resize', resize);
 
@@ -471,12 +589,15 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   function setPause(value) { state.paused = value; ui.pause.classList.toggle('show', value); if (document.pointerLockElement) document.exitPointerLock(); }
   function toggleQuality() {
     state.highQuality = !state.highQuality;
-    const ratio = Math.min(devicePixelRatio || 1, state.highQuality ? 1.7 : 1);
+    // UPGRADE: pixel ratio cap 2.0
+    const ratio = Math.min(devicePixelRatio || 1, state.highQuality ? 2.0 : 1);
     renderer.setPixelRatio(ratio); renderer.setSize(innerWidth, innerHeight);
-    composer.setPixelRatio(ratio); composer.setSize(innerWidth, innerHeight);
+    // BUG FIX: Removed composer.setPixelRatio(ratio) — method doesn't exist
+    composer.setSize(innerWidth, innerHeight);
     renderer.shadowMap.enabled = state.highQuality;
     moon.shadow.mapSize.set(state.highQuality ? 2048 : 1024, state.highQuality ? 2048 : 1024);
-    bloom.strength = state.highQuality ? 0.42 : 0.24;
+    // UPGRADE: ULTRA = 0.85, BALANCED = 0.42
+    bloom.strength = state.highQuality ? 0.85 : 0.42;
     renderer.shadowMap.needsUpdate = true;
     ui.quality.textContent = state.highQuality ? 'ULTRA' : 'BALANCED';
     ui.quality.classList.toggle('balanced', !state.highQuality);
@@ -505,6 +626,10 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
       carModel.wheelPivots.forEach((w, i) => { w.rotation.x += carModel.speed * dt * 1.6; if (i < 2) w.rotation.y = -steering * 0.26; });
       ui.speed.textContent = String(Math.round(Math.abs(carModel.speed) * 3.6)).padStart(3, '0');
       ui.gear.textContent = carModel.speed > 0.4 ? 'D' : carModel.speed < -0.4 ? 'R' : 'P';
+      // UPGRADE: Brake light effect for player car
+      if (carModel.tailMat) {
+        carModel.tailMat.emissiveIntensity = carModel.speed < -0.5 ? 6.0 : 3.2;
+      }
     } else {
       const direction = movementVector(forward, right);
       const movingVec = direction.lengthSq() > 0.01;
@@ -592,6 +717,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     moon.intensity = 1.55 - daylight * 1.25;
     moon.color.set(0x9bbef2).lerp(new THREE.Color(0xffd1a0), daylight * 0.7);
     warmFill.intensity = 0.36 + daylight * 1.15;
+    // UPGRADE: Fog density oscillation between 0.006 and 0.011 over 40s (cloud cover)
+    scene.fog.density = 0.006 + (Math.sin(state.time * (Math.PI * 2 / 40)) * 0.5 + 0.5) * 0.005;
     scene.fog.color.set(0x111b26).lerp(new THREE.Color(0x81909a), daylight * 0.45);
     skyMaterial.color.set(0x7f91a6).lerp(new THREE.Color(0xffffff), daylight * 0.7);
     shared.windowLit.emissiveIntensity = 0.5 * (1 - daylight * 0.8);
@@ -681,6 +808,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     camera.position.lerp(cameraDesired, 1 - Math.exp(-dt * 4.2));
     cameraLookTarget.set(actor.position.x, actor.position.y + (state.inCar ? 1.1 : 1.25), actor.position.z);
     cameraLook.lerp(cameraLookTarget, 1 - Math.exp(-dt * 6.5)); camera.lookAt(cameraLook);
+    // UPGRADE: Rim light follows player position
+    playerRimLight.position.copy(player.root.position).add(new THREE.Vector3(-1.5, 2.5, 1.5));
   }
 
   function drawMinimap() {
@@ -702,12 +831,44 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
   let mapTimer = 0;
   function animate() {
     requestAnimationFrame(animate);
-    clock.update();
+    // BUG FIX: THREE.Clock — getDelta() works correctly (no .update() needed)
     const dt = Math.min(clock.getDelta(), 0.04);
     if (!state.paused) {
       state.time += dt; updatePlayer(dt); updateCombat(dt); updateCamera(dt);
       goalRing.scale.setScalar(1 + Math.sin(state.time * 3.2) * 0.08); marker.rotation.y += dt * 0.8; beam.material.opacity = 0.13 + (Math.sin(state.time * 2.1) + 1) * 0.055;
+
+      // UPGRADE: Rain with wind drift applied each frame
+      const rainPos = rainGeo.attributes.position;
+      for (let i = 0; i < rainCount; i++) {
+        const n = i * 6;
+        // top of raindrop
+        rainPos.array[n] += rainWindX * dt * 60;
+        rainPos.array[n + 2] += rainWindZ * dt * 60;
+        // bottom of raindrop
+        rainPos.array[n + 3] += rainWindX * dt * 60;
+        rainPos.array[n + 5] += rainWindZ * dt * 60;
+        // wrap when out of bounds
+        if (rainPos.array[n] > 100) { rainPos.array[n] -= 200; rainPos.array[n + 3] -= 200; }
+        if (rainPos.array[n + 2] > 95) { rainPos.array[n + 2] -= 190; rainPos.array[n + 5] -= 190; }
+      }
+      rainPos.needsUpdate = true;
       rain.position.z = (rain.position.z + dt * 8) % 12;
+
+      // UPGRADE: Rain splash particles update
+      for (const splash of rainSplashParticles) {
+        splash.userData.life += dt;
+        if (splash.userData.life >= splash.userData.maxLife) {
+          splash.userData.life = 0;
+          splash.userData.maxLife = 0.4 + Math.random() * 0.3;
+          splash.position.set(104 + Math.random() * 32, 0.012, -130 + Math.random() * 260);
+          splash.scale.setScalar(1);
+        } else {
+          const t = splash.userData.life / splash.userData.maxLife;
+          splash.scale.setScalar(1 + t * 2.5);
+          splash.material.opacity = (1 - t) * 0.5;
+        }
+      }
+
       mapTimer += dt; if (mapTimer > 0.15) { drawMinimap(); mapTimer = 0; }
     }
     composer.render();

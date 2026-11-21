@@ -8,7 +8,8 @@ void ULokiHealthComponent::ApplyDamage(float Amount)
     if (Amount <= 0.f || Health <= 0.f) return;
     Health = FMath::Clamp(Health - Amount, 0.f, MaxHealth);
     OnHealthChanged.Broadcast(Health, MaxHealth);
-    if (Health <= 0.f) GetOwner()->SetActorEnableCollision(false);
+    if (Health <= 0.f)
+        if (AActor* Owner = GetOwner()) Owner->SetActorEnableCollision(false);
 }
 void ULokiHealthComponent::RestoreHealth(float Amount)
 {

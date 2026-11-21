@@ -4,18 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="theme-color" content="#070b12">
+  <meta name="description" content="NEXORA CITY — Afterlight District. AAA open-world cyberpunk browser game.">
   <title>NEXORA CITY — Afterlight</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%23070b12' width='32' height='32'/><text y='24' x='4' font-size='22' font-family='Arial' font-weight='bold' fill='%2362ecdf'>N</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <noscript><p style="color:#62ecdf;text-align:center;padding:40px;font-family:monospace;background:#070b12">NEXORA CITY requires JavaScript to run.</p></noscript>
   <main id="shell">
     <canvas id="world" aria-label="NEXORA CITY playable game"></canvas>
     <div class="vignette"></div>
     <header class="topbar">
-      <a class="brand" href="#" aria-label="Nexora City home"><span class="brand-mark">N</span><span>NEXORA<span class="brand-light">CITY</span><small>AFTERLIGHT DISTRICT</small></span></a>
+      <a class="brand" href="#" aria-label="Nexora City home"><span class="brand-mark" title="NEXORA CITY">N</span><span>NEXORA<span class="brand-light">CITY</span><small>AFTERLIGHT DISTRICT</small></span></a>
       <div class="top-right"><span class="live-dot"></span><span>LIVE CITY</span><i></i><span id="clock">21:48</span><span class="weather">◒ &nbsp; 19°</span><span class="wanted" id="wanted">WANTED <b>☆☆☆☆☆</b></span><button id="qualityToggle" class="quality-button" title="Toggle graphics quality">ULTRA</button></div>
     </header>
     <section class="mission-panel">
@@ -43,7 +46,7 @@
     <div class="pause-overlay" id="pauseOverlay"><div class="pause-card"><div class="eyebrow">NEXORA CITY <span class="mission-type">PAUSED</span></div><h2>TAKE A <em>BREATH.</em></h2><p>Your story is still waiting.</p><div class="pause-stat"><span>MISSION</span><b id="pauseMission">LAST LIGHT</b></div><button id="resumeButton">BACK TO THE CITY <span>→</span></button><small>PRESS ESC TO RETURN</small></div></div>
     <footer class="controls"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><label>MOVE / DRIVE</label></span><i></i><span><kbd>SHIFT</kbd><label>SPRINT</label></span><i></i><span><kbd>SPACE</kbd><label>HOP / BRAKE</label></span><i></i><span><kbd>E</kbd><label>INTERACT</label></span><i></i><span><kbd>LMB</kbd><label>FIRE</label></span><i></i><span><kbd>R</kbd><label>RELOAD</label></span><i></i><span><kbd>RMB</kbd><label>LOOK</label></span><i></i><span><kbd>ESC</kbd><label>PAUSE</label></span></footer>
     <div class="reticle"><i></i></div>
-    <div class="loading-screen" id="loadingScreen"><div class="loading-logo">N</div><div class="loading-title">AFTERLIGHT <span>DISTRICT</span></div><div class="loading-track"><i></i></div><small>BUILDING A CITY THAT NEVER SLEEPS</small></div>
+    <div class="loading-screen" id="loadingScreen"><div class="loading-logo">N</div><div class="loading-title">AFTERLIGHT <span>DISTRICT</span></div><div class="loading-track"><i></i></div><small>RENDERING THE AFTERLIGHT DISTRICT &nbsp;·&nbsp; AAA GRAPHICS ENGINE</small></div>
   </main>
   <script type="module" src="main.js"></script>
 </body>

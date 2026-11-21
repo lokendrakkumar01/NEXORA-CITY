@@ -17,8 +17,9 @@ void ALokiPedestrian::BeginPlay()
 }
 void ALokiPedestrian::PickDestination()
 {
-    if (!GetController()) return;
+    AAIController* AI = Cast<AAIController>(GetController());
+    if (!AI) return;
     const FVector2D Offset = FMath::RandPointInCircle(WanderRadius);
-    Cast<AAIController>(GetController())->MoveToLocation(HomeLocation + FVector(Offset.X, Offset.Y, 0.f), 60.f);
+    AI->MoveToLocation(HomeLocation + FVector(Offset.X, Offset.Y, 0.f), 60.f);
     GetWorldTimerManager().SetTimer(WanderTimer, this, &ALokiPedestrian::PickDestination, PauseBetweenWalks + FMath::FRandRange(2.f, 6.f), false);
 }

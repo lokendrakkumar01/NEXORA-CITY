@@ -8,6 +8,8 @@ class UCameraComponent;
 class USpringArmComponent;
 class ULokiHealthComponent;
 class ALokiVehiclePawn;
+class UInputMappingContext;
+class UInputAction;
 
 UCLASS()
 class LOKICITY_API ALokiCharacter : public ACharacter
@@ -18,6 +20,15 @@ public:
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     UFUNCTION(BlueprintCallable, Category="Interaction") void TryInteract();
     UFUNCTION(BlueprintPure, Category="Health") ULokiHealthComponent* GetHealthComponent() const { return Health; }
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input", meta=(AllowPrivateAccess="true"))
+    TObjectPtr<class UInputMappingContext> DefaultMappingContext;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+    float BaseTurnRate = 65.f;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+    float BaseLookUpRate = 65.f;
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<USpringArmComponent> SpringArm;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UCameraComponent> Camera;
