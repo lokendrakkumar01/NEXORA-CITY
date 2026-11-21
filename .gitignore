@@ -1,0 +1,19 @@
+# Unreal Engine generated files
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+*.sln
+*.suo
+*.user
+*.opensdf
+*.sdf
+
+# Node generated files
+node_modules/
+npm-debug.log*
+
+# Editor/OS noise
+.DS_Store
+Thumbs.db
