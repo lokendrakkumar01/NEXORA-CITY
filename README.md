@@ -10,7 +10,7 @@ The browser-playable third-person 3D city scene is in `web/`. It uses Three.js a
 2. Open a terminal in the `web` folder and run `npm install` once.
 3. Run `npm start` and open `http://localhost:4173` in a browser.
 
-Use **WASD** to move, **Shift** to sprint, **Space** to hop, drag the mouse to look around, scroll to zoom, **E** near the Vela GT to enter or exit, and **Escape** to pause. In the car, **W/S** accelerate/reverse, **A/D** steer, and **Space** brakes. Reach Neon Market to complete the delivery objective. The city, buildings, lighting, weather, traffic, pedestrians, car and character are generated as original Three.js geometry and materials. Press **ULTRA/BALANCED** in the upper-right to adjust shadows, bloom and resolution for performance.
+Use **WASD** to move, **Shift** to sprint, **Space** to hop, **left click** to fire, **R** to reload, **right mouse drag** to aim/look, and **Escape** to pause. Press **E** near the Vela GT to enter or exit; in the car, **W/S** accelerate/reverse, **A/D** steer, and **Space** brakes. Reach Neon Market, press **E** to start the heist, survive the Nox crew ambush, secure the data key, then drive to the East Gate. The original cast includes Loki and Nox crew members Rae, Kado, Vex and Sable; no GTA characters or assets are used. The scene adds a procedural sidearm, ammo/reload, damage, rival combat AI, wanted stars, patrol pursuit, muzzle flashes, bullet tracers and hit sparks. The city, characters and vehicle are generated with Three.js geometry and materials. Press **ULTRA/BALANCED** in the upper-right to adjust shadows, bloom and resolution for performance.
 
 ## Deploy on Render
 
